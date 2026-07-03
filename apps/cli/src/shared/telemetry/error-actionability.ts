@@ -31,6 +31,7 @@ export const CliSuggestionType = {
   Login: "login",
   LinkProject: "link_project",
   StartDocker: "start_docker",
+  ProvideFlags: "provide_flags",
   SetEnvVar: "set_env_var",
   RepairMigration: "repair_migration",
   UpdateConfig: "update_config",
@@ -73,6 +74,99 @@ type ErrorRecord = Record<string, unknown>;
 
 type ActionabilityTemplate = Omit<CliErrorActionability, "error_fingerprint">;
 
+interface ClassifiedTemplate {
+  readonly template: ActionabilityTemplate;
+  readonly fingerprint_suffix?: string;
+}
+
+const authLoginTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.Auth,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.Login,
+  suggested_command: "supabase login",
+} satisfies ActionabilityTemplate;
+
+const authTokenTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.Auth,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.SetEnvVar,
+} satisfies ActionabilityTemplate;
+
+const externalNetworkTemplate = {
+  error_kind: CliErrorKind.ExternalService,
+  error_category: CliErrorCategory.Network,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.RerunDebug,
+} satisfies ActionabilityTemplate;
+
+const externalStatusTemplate = {
+  error_kind: CliErrorKind.ExternalService,
+  error_category: CliErrorCategory.ApiStatus,
+  has_suggestion: false,
+  suggestion_type: CliSuggestionType.None,
+} satisfies ActionabilityTemplate;
+
+const planLimitTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.PlanLimit,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.UpgradePlan,
+} satisfies ActionabilityTemplate;
+
+const invalidInputTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.InvalidInput,
+  has_suggestion: false,
+  suggestion_type: CliSuggestionType.None,
+} satisfies ActionabilityTemplate;
+
+const invalidConfigTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.InvalidConfig,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.UpdateConfig,
+} satisfies ActionabilityTemplate;
+
+const startStackTemplate = {
+  ...invalidConfigTemplate,
+  suggested_command: "supabase start",
+} satisfies ActionabilityTemplate;
+
+const stopStackTemplate = {
+  ...invalidConfigTemplate,
+  suggested_command: "supabase stop",
+} satisfies ActionabilityTemplate;
+
+const dbConnectionTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.DbConnection,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.UpdateConfig,
+} satisfies ActionabilityTemplate;
+
+const migrationDriftTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.MigrationDrift,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.RepairMigration,
+} satisfies ActionabilityTemplate;
+
+const permissionTemplate = {
+  error_kind: CliErrorKind.UserActionable,
+  error_category: CliErrorCategory.Permission,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.UpdateConfig,
+} satisfies ActionabilityTemplate;
+
+const internalPanicTemplate = {
+  error_kind: CliErrorKind.InternalBug,
+  error_category: CliErrorCategory.Panic,
+  has_suggestion: true,
+  suggestion_type: CliSuggestionType.RerunDebug,
+} satisfies ActionabilityTemplate;
+
 const defaultUnknownTemplate: ActionabilityTemplate = {
   error_kind: CliErrorKind.Unknown,
   error_category: CliErrorCategory.Unknown,
@@ -81,41 +175,30 @@ const defaultUnknownTemplate: ActionabilityTemplate = {
 };
 
 const actionabilityByTag = {
-  InvalidTokenError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.Auth,
-    has_suggestion: true,
-    suggestion_type: CliSuggestionType.Login,
-    suggested_command: "supabase login",
-  },
-  LegacyInvalidAccessTokenError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.Auth,
-    has_suggestion: true,
-    suggestion_type: CliSuggestionType.Login,
-    suggested_command: "supabase login",
-  },
-  LegacyLinkAuthTokenError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.Auth,
-    has_suggestion: true,
-    suggestion_type: CliSuggestionType.Login,
-    suggested_command: "supabase login",
-  },
-  LegacyPlatformAuthRequiredError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.Auth,
-    has_suggestion: true,
-    suggestion_type: CliSuggestionType.Login,
-    suggested_command: "supabase login",
-  },
-  PlatformAuthRequiredError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.Auth,
-    has_suggestion: true,
-    suggestion_type: CliSuggestionType.Login,
-    suggested_command: "supabase login",
-  },
+  InvalidTokenError: authLoginTemplate,
+  LegacyInvalidAccessTokenError: authLoginTemplate,
+  LegacyLinkAuthTokenError: authLoginTemplate,
+  LegacyPlatformAuthRequiredError: authLoginTemplate,
+  PlatformAuthRequiredError: authLoginTemplate,
+  LegacyDbAdvisorsInvalidTokenError: authLoginTemplate,
+  LegacyDbAdvisorsNotLoggedInError: authLoginTemplate,
+  LegacyDbQueryLoginRequiredError: authLoginTemplate,
+  LegacyLoginFailedError: authLoginTemplate,
+  LegacyLoginSaveTokenError: authLoginTemplate,
+  LegacyLoginMissingTokenError: authTokenTemplate,
+  LegacyStorageAuthTokenError: authLoginTemplate,
+  LegacySsoAddSamlDisabledError: planLimitTemplate,
+  LegacySsoListSamlDisabledError: planLimitTemplate,
+  LegacyDbConnectError: dbConnectionTemplate,
+  LegacyDbConfigConnectTempRoleError: dbConnectionTemplate,
+  LegacyDbConfigIpv6Error: dbConnectionTemplate,
+  LegacyDbConfigLoadError: invalidConfigTemplate,
+  LegacyDbConfigParseUrlError: invalidConfigTemplate,
+  LegacyDbPullMigrationConflictError: migrationDriftTemplate,
+  LegacyMigrationMissingLocalError: migrationDriftTemplate,
+  LegacyMigrationMissingRemoteError: migrationDriftTemplate,
+  LegacyDeleteTokenError: permissionTemplate,
+  LegacyCredentialDeleteError: permissionTemplate,
   ProjectNotLinkedError: {
     error_kind: CliErrorKind.UserActionable,
     error_category: CliErrorCategory.ProjectNotLinked,
@@ -144,66 +227,44 @@ const actionabilityByTag = {
     suggestion_type: CliSuggestionType.LinkProject,
     suggested_command: "supabase link",
   },
-  LegacyInvalidProjectRefError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.InvalidInput,
-    has_suggestion: false,
-    suggestion_type: CliSuggestionType.None,
+  LegacyProjectPausedError: {
+    ...invalidConfigTemplate,
   },
-  LegacyDockerRunError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.DockerNotRunning,
+  LegacyInvalidProjectRefError: invalidInputTemplate,
+  LegacyInvalidSecretPairError: invalidInputTemplate,
+  LegacySsoInvalidUuidError: invalidInputTemplate,
+  LegacySsoMutexFlagError: invalidInputTemplate,
+  LegacySsoShowNotFoundError: invalidInputTemplate,
+  LegacySsoUpdateNotFoundError: invalidInputTemplate,
+  LegacySsoRemoveNotFoundError: invalidInputTemplate,
+  LegacyBranchesBranchingDisabledError: {
+    ...invalidInputTemplate,
     has_suggestion: true,
-    suggestion_type: CliSuggestionType.StartDocker,
+    suggestion_type: CliSuggestionType.UpdateConfig,
+    suggested_command: "supabase branches create",
   },
-  MissingOption: {
+  MissingOption: invalidInputTemplate,
+  NoTtyError: invalidInputTemplate,
+  NonInteractiveError: {
     error_kind: CliErrorKind.UserActionable,
     error_category: CliErrorCategory.InvalidInput,
-    has_suggestion: false,
-    suggestion_type: CliSuggestionType.None,
+    has_suggestion: true,
+    suggestion_type: CliSuggestionType.ProvideFlags,
   },
-  NoTtyError: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.InvalidInput,
-    has_suggestion: false,
-    suggestion_type: CliSuggestionType.None,
-  },
-  UnknownSubcommand: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.InvalidInput,
-    has_suggestion: false,
-    suggestion_type: CliSuggestionType.None,
-  },
-  UnrecognizedOption: {
-    error_kind: CliErrorKind.UserActionable,
-    error_category: CliErrorCategory.InvalidInput,
-    has_suggestion: false,
-    suggestion_type: CliSuggestionType.None,
-  },
+  UnknownSubcommand: invalidInputTemplate,
+  UnrecognizedOption: invalidInputTemplate,
   DockerPullError: {
     error_kind: CliErrorKind.ExternalService,
     error_category: CliErrorCategory.Network,
     has_suggestion: true,
     suggestion_type: CliSuggestionType.RerunDebug,
   },
-  ApiError: {
-    error_kind: CliErrorKind.ExternalService,
-    error_category: CliErrorCategory.ApiStatus,
-    has_suggestion: false,
-    suggestion_type: CliSuggestionType.None,
-  },
-  InvalidStackStateError: {
-    error_kind: CliErrorKind.InternalBug,
-    error_category: CliErrorCategory.ImpossibleState,
-    has_suggestion: true,
-    suggestion_type: CliSuggestionType.RerunDebug,
-  },
-  StackBuildError: {
-    error_kind: CliErrorKind.InternalBug,
-    error_category: CliErrorCategory.ImpossibleState,
-    has_suggestion: true,
-    suggestion_type: CliSuggestionType.RerunDebug,
-  },
+  InvalidStackStateError: invalidConfigTemplate,
+  NoRunningStackError: startStackTemplate,
+  StateNotFoundError: startStackTemplate,
+  DaemonStartError: startStackTemplate,
+  DaemonStillRunningError: stopStackTemplate,
+  StackAlreadyRunningError: stopStackTemplate,
 } satisfies Record<string, ActionabilityTemplate>;
 
 const actionabilityByTagLookup = new Map<string, ActionabilityTemplate>(
@@ -217,6 +278,11 @@ function isErrorRecord(value: unknown): value is ErrorRecord {
 function readString(value: ErrorRecord, key: string): string | undefined {
   const field = value[key];
   return typeof field === "string" && field.trim().length > 0 ? field.trim() : undefined;
+}
+
+function readNumber(value: ErrorRecord, key: string): number | undefined {
+  const field = value[key];
+  return typeof field === "number" && Number.isFinite(field) ? field : undefined;
 }
 
 function safeIdentifier(value: string | undefined): string | undefined {
@@ -235,8 +301,9 @@ function readErrorName(error: unknown): string | undefined {
   return safeIdentifier(readString(error, "name"));
 }
 
-function fingerprint(prefix: string, identifier: string | undefined): string {
-  return identifier === undefined ? `${prefix}:unknown` : `${prefix}:${identifier}`;
+function fingerprint(prefix: string, identifier: string | undefined, suffix?: string): string {
+  const base = identifier === undefined ? `${prefix}:unknown` : `${prefix}:${identifier}`;
+  return suffix === undefined ? base : `${base}:${suffix}`;
 }
 
 function classifyShowHelp(error: ErrorRecord): CliErrorActionability | undefined {
@@ -249,15 +316,157 @@ function classifyShowHelp(error: ErrorRecord): CliErrorActionability | undefined
   };
 }
 
-function inferTemplateFromTag(tag: string | undefined): ActionabilityTemplate | undefined {
-  if (tag === undefined) return undefined;
-  if (/Panic/.test(tag)) {
+function hasDockerDaemonDownDetail(message: string | undefined): boolean {
+  const detail = message?.toLocaleLowerCase();
+  if (detail === undefined) return false;
+  return (
+    detail.includes("cannot connect to the docker daemon") ||
+    detail.includes("docker daemon is not running") ||
+    detail.includes("docker desktop is not running") ||
+    detail.includes("is the docker daemon running")
+  );
+}
+
+function classifyLegacyDockerRunError(error: ErrorRecord): ClassifiedTemplate {
+  const message = readString(error, "message");
+  if (message?.startsWith("failed to run docker.")) {
     return {
+      template: {
+        error_kind: CliErrorKind.UserActionable,
+        error_category: CliErrorCategory.DockerNotRunning,
+        has_suggestion: true,
+        suggestion_type: CliSuggestionType.StartDocker,
+      },
+      fingerprint_suffix: "docker_not_running",
+    };
+  }
+  if (message?.startsWith("failed to pull docker image from all registries:")) {
+    if (hasDockerDaemonDownDetail(message)) {
+      return {
+        template: {
+          error_kind: CliErrorKind.UserActionable,
+          error_category: CliErrorCategory.DockerNotRunning,
+          has_suggestion: true,
+          suggestion_type: CliSuggestionType.StartDocker,
+        },
+        fingerprint_suffix: "docker_not_running",
+      };
+    }
+    return {
+      template: externalNetworkTemplate,
+      fingerprint_suffix: "registry_pull",
+    };
+  }
+  return {
+    template: defaultUnknownTemplate,
+    fingerprint_suffix: "unknown",
+  };
+}
+
+function classifyStackBuildError(error: ErrorRecord): ClassifiedTemplate {
+  const detail = readString(error, "detail");
+  if (
+    detail?.startsWith('mode "native" only supports') ||
+    detail === "imgproxy requires storage to be enabled" ||
+    detail === "vector requires analytics to be enabled" ||
+    detail === "studio requires pgmeta to be enabled"
+  ) {
+    return {
+      template: {
+        error_kind: CliErrorKind.UserActionable,
+        error_category: CliErrorCategory.InvalidConfig,
+        has_suggestion: true,
+        suggestion_type: CliSuggestionType.UpdateConfig,
+      },
+      fingerprint_suffix: "invalid_config",
+    };
+  }
+  if (detail === "Failed to prepare stack assets") {
+    return {
+      template: externalNetworkTemplate,
+      fingerprint_suffix: "asset_preparation",
+    };
+  }
+  return {
+    template: {
       error_kind: CliErrorKind.InternalBug,
-      error_category: CliErrorCategory.Panic,
+      error_category: CliErrorCategory.ImpossibleState,
       has_suggestion: true,
       suggestion_type: CliSuggestionType.RerunDebug,
+    },
+    fingerprint_suffix: "internal_build",
+  };
+}
+
+function textFields(error: ErrorRecord): string {
+  return ["body", "message", "detail", "suggestion"]
+    .flatMap((key) => {
+      const value = readString(error, key);
+      return value === undefined ? [] : [value.toLowerCase()];
+    })
+    .join("\n");
+}
+
+function hasPlanLimitDetail(error: ErrorRecord): boolean {
+  const text = textFields(error);
+  return (
+    text.includes("upgrade") ||
+    text.includes("billing") ||
+    text.includes("entitlement") ||
+    text.includes("plan limit") ||
+    text.includes("quota") ||
+    text.includes("branching limit")
+  );
+}
+
+function classifyGatedStatusError(error: ErrorRecord): ClassifiedTemplate {
+  const status = readNumber(error, "status");
+  if (status !== undefined && status >= 400 && status < 500 && hasPlanLimitDetail(error)) {
+    return {
+      template: planLimitTemplate,
+      fingerprint_suffix: "plan_limit",
     };
+  }
+  return {
+    template: externalStatusTemplate,
+    fingerprint_suffix: "api_status",
+  };
+}
+
+function classifyApiError(error: ErrorRecord): ClassifiedTemplate {
+  return readNumber(error, "statusCode") === undefined
+    ? {
+        template: externalNetworkTemplate,
+        fingerprint_suffix: "network",
+      }
+    : {
+        template: externalStatusTemplate,
+        fingerprint_suffix: "api_status",
+      };
+}
+
+function isNativeJsExceptionName(name: string | undefined): boolean {
+  return (
+    name === "TypeError" ||
+    name === "ReferenceError" ||
+    name === "RangeError" ||
+    name === "SyntaxError" ||
+    name === "EvalError" ||
+    name === "URIError" ||
+    name === "AggregateError"
+  );
+}
+
+function inferTemplateFromTag(tag: string | undefined): ActionabilityTemplate | undefined {
+  if (tag === undefined) return undefined;
+  if (tag.endsWith("NetworkError")) {
+    return externalNetworkTemplate;
+  }
+  if (tag.endsWith("UnexpectedStatusError") || tag.endsWith("StatusError")) {
+    return externalStatusTemplate;
+  }
+  if (/Panic/.test(tag)) {
+    return internalPanicTemplate;
   }
   if (/ImpossibleState/.test(tag)) {
     return {
@@ -275,6 +484,42 @@ export function classifyCliErrorActionability(error: unknown): CliErrorActionabi
   if (tag === "ShowHelp" && isErrorRecord(error)) {
     const classified = classifyShowHelp(error);
     if (classified !== undefined) return classified;
+  }
+  if (tag === "LegacyDockerRunError" && isErrorRecord(error)) {
+    const classified = classifyLegacyDockerRunError(error);
+    return {
+      ...classified.template,
+      error_fingerprint: fingerprint("tag", tag, classified.fingerprint_suffix),
+    };
+  }
+  if (tag === "StackBuildError" && isErrorRecord(error)) {
+    const classified = classifyStackBuildError(error);
+    return {
+      ...classified.template,
+      error_fingerprint: fingerprint("tag", tag, classified.fingerprint_suffix),
+    };
+  }
+  if (
+    (tag === "LegacyBranchesCreateUnexpectedStatusError" ||
+      tag === "LegacyBranchesUpdateUnexpectedStatusError" ||
+      tag === "LegacySsoUpdateUnexpectedStatusError" ||
+      tag === "LegacySsoRemoveUnexpectedStatusError" ||
+      tag === "LegacyVanitySubdomainsActivateUnexpectedStatusError" ||
+      tag === "LegacyVanitySubdomainsCheckUnexpectedStatusError") &&
+    isErrorRecord(error)
+  ) {
+    const classified = classifyGatedStatusError(error);
+    return {
+      ...classified.template,
+      error_fingerprint: fingerprint("tag", tag, classified.fingerprint_suffix),
+    };
+  }
+  if (tag === "ApiError" && isErrorRecord(error)) {
+    const classified = classifyApiError(error);
+    return {
+      ...classified.template,
+      error_fingerprint: fingerprint("tag", tag, classified.fingerprint_suffix),
+    };
   }
 
   const template = tag === undefined ? undefined : actionabilityByTagLookup.get(tag);
@@ -300,8 +545,16 @@ export function classifyCliErrorActionability(error: unknown): CliErrorActionabi
     };
   }
 
+  const name = readErrorName(error);
+  if (isNativeJsExceptionName(name)) {
+    return {
+      ...internalPanicTemplate,
+      error_fingerprint: fingerprint("error", name),
+    };
+  }
+
   return {
     ...defaultUnknownTemplate,
-    error_fingerprint: fingerprint("error", readErrorName(error)),
+    error_fingerprint: fingerprint("error", name),
   };
 }
