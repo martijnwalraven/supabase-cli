@@ -31,6 +31,9 @@ for PKG in stack config process-compose; do
   DIR="$ROOT/packages/$PKG"
   rm -rf "$DIR/dist"
   node "$TSC" -p "$DIR/tsconfig.dist.json"
+  if [ "$PKG" = stack ]; then
+    cp "$DIR/src/services/edge-runtime-main.ts" "$DIR/dist/services/edge-runtime-main.ts"
+  fi
   pnpm --dir "$DIR" pack --pack-destination "$STAGE" > /dev/null
   mv "$STAGE"/supabase-"$PKG"-*.tgz "$VENDOR_DIR/supabase-$PKG.tgz"
   node -e "
