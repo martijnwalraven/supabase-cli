@@ -16,8 +16,15 @@ interface SupervisorRuntimeConfig {
   readonly cleanup: ReadonlyArray<ExternalCleanupAction>;
 }
 
+// Extension-matched to the CURRENT module: raw-source consumption spawns
+// the .ts runtime under type stripping; a compiled dist spawns the .js
+// sibling — a fixed .ts literal would point at a file the packed artifact
+// does not carry.
 export const supervisorRuntimePath = fileURLToPath(
-  new URL("./supervisor-runtime.ts", import.meta.url),
+  new URL(
+    import.meta.url.endsWith(".js") ? "./supervisor-runtime.js" : "./supervisor-runtime.ts",
+    import.meta.url,
+  ),
 );
 
 export const usesSupervisor = (def: ServiceDef): boolean => def.supervision != null;
