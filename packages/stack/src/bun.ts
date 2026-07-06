@@ -46,7 +46,10 @@ export const platformFactory: PlatformFactory = (apiPort) =>
   Layer.mergeAll(BunServices.layer, BunHttpServer.layer({ port: apiPort }));
 
 /** Path to the Bun daemon entry point for use with daemonLayer. */
-export const daemonEntryPoint: string = fileURLToPath(new URL("./daemon-bun.ts", import.meta.url));
+// Extension-matched to the current module (see node.ts).
+export const daemonEntryPoint: string = fileURLToPath(
+  new URL(import.meta.url.endsWith(".js") ? "./daemon-bun.js" : "./daemon-bun.ts", import.meta.url),
+);
 
 // ---------------------------------------------------------------------------
 // Promise API — convenience wrappers for non-Effect consumers

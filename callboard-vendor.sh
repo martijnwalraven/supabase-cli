@@ -5,8 +5,9 @@
 # callboard adoption's remote-build shape). pnpm pack replaces catalog:
 # and workspace:* specs; the consumer's pnpm overrides route the sibling
 # names to these tarballs. Same deliberate-bump flow as
-# ../workers-sdk/callboard-pack.sh; run `pnpm install` in the consumer
-# afterwards.
+# ../workers-sdk/callboard-pack.sh; run `pnpm install --force` in the
+# consumer afterwards (plain install does not re-extract a changed
+# tarball under a stable name).
 set -eu
 
 if [ $# -ne 1 ]; then
@@ -18,7 +19,10 @@ ROOT=$(cd "$(dirname "$0")" && pwd)
 TSC="$ROOT/node_modules/.pnpm/typescript@6.0.3/node_modules/typescript/bin/tsc"
 
 COMMIT=$(git -C "$ROOT" rev-parse HEAD)
-if [ -n "$(git -C "$ROOT" status --porcelain --untracked-files=no | head -1)" ]; then
+# Untracked (non-ignored) files count as dirty: tsc/pack can include
+# them, and provenance must never name a clean commit that cannot
+# reproduce the tarball.
+if [ -n "$(git -C "$ROOT" status --porcelain | head -1)" ]; then
   DIRTY=true
 else
   DIRTY=false
@@ -27,6 +31,9 @@ fi
 STAGE=$(mktemp -d)
 trap 'rm -rf "$STAGE"' EXIT
 
+# Build and pack the WHOLE closure into the stage first: the three
+# tarballs only make sense bumped together, and a mid-loop failure must
+# not leave the consumer with a mixed closure.
 for PKG in stack config process-compose; do
   DIR="$ROOT/packages/$PKG"
   rm -rf "$DIR/dist"
@@ -35,7 +42,11 @@ for PKG in stack config process-compose; do
     cp "$DIR/src/services/edge-runtime-main.ts" "$DIR/dist/services/edge-runtime-main.ts"
   fi
   pnpm --dir "$DIR" pack --pack-destination "$STAGE" > /dev/null
-  mv "$STAGE"/supabase-"$PKG"-*.tgz "$VENDOR_DIR/supabase-$PKG.tgz"
+  mv "$STAGE"/supabase-"$PKG"-*.tgz "$STAGE/supabase-$PKG.tgz"
+done
+
+for PKG in stack config process-compose; do
+  mv "$STAGE/supabase-$PKG.tgz" "$VENDOR_DIR/supabase-$PKG.tgz"
   node -e "
 const fs = require('fs');
 const path = '$VENDOR_DIR/vendor-manifest.json';

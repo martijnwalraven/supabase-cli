@@ -125,7 +125,11 @@ export const platformFactory: PlatformFactory = (apiPort) =>
   );
 
 /** Path to the Node daemon entry point for use with daemonLayer. */
-export const daemonEntryPoint: string = fileURLToPath(new URL("./daemon-node.ts", import.meta.url));
+// Extension-matched to the current module: raw-source runs resolve the .ts
+// sibling, a compiled dist resolves the .js the packed artifact carries.
+export const daemonEntryPoint: string = fileURLToPath(
+  new URL(import.meta.url.endsWith(".js") ? "./daemon-node.js" : "./daemon-node.ts", import.meta.url),
+);
 
 // ---------------------------------------------------------------------------
 // Promise API — convenience wrappers for non-Effect consumers
