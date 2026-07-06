@@ -29,8 +29,12 @@ const isMain = (() => {
     return false;
   }
 
+  // Extension-agnostic: raw-source consumption runs this module as .ts,
+  // a compiled dist runs it as .js — a fixed .ts suffix made the packed
+  // runtime silently no-op (isMain false → immediate exit 0 → the
+  // supervisor restart-looped every member).
   const runtimePath = fileURLToPath(import.meta.url);
-  if (!runtimePath.endsWith("supervisor-runtime.ts")) {
+  if (!/supervisor-runtime\.(ts|js)$/.test(runtimePath)) {
     return false;
   }
 
