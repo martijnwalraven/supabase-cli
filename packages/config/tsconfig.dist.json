@@ -1,0 +1,18 @@
+{
+  // Pack-time dist emit for vendored consumption (the callboard adoption's
+  // remote-build shape) — dev and the fork's own tooling keep running raw
+  // .ts; callboard-vendor.sh builds this before pnpm pack, and
+  // publishConfig swaps the packed manifest's exports to dist.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "rootDir": "src",
+    "outDir": "dist",
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
+}

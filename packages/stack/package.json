@@ -56,5 +56,22 @@
       "nx",
       "ps"
     ]
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/node.d.ts",
+        "bun": "./dist/bun.js",
+        "default": "./dist/node.js"
+      },
+      "./effect": {
+        "types": "./dist/effect.d.ts",
+        "default": "./dist/effect.js"
+      },
+      "./daemon-bun": "./dist/daemon-bun.js"
+    }
   }
 }

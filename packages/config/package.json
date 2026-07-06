@@ -53,5 +53,25 @@
         ]
       }
     }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./bun": {
+        "types": "./dist/bun.d.ts",
+        "default": "./dist/bun.js"
+      },
+      "./node": {
+        "types": "./dist/node.d.ts",
+        "default": "./dist/node.js"
+      },
+      "./schema.json": "./dist/schema.json"
+    }
   }
 }
